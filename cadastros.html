@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cadastros — Sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body class="pagina">
+  <div class="layout-app">
+    <aside id="sidebar" class="sidebar"></aside>
+    <div class="area-principal">
+      <header class="topbar-mobile">
+        <button type="button" id="botao-menu-mobile" class="topbar-menu-botao" aria-label="Abrir menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+        <span class="topbar-marca">Sistema</span>
+      </header>
+
+      <main class="conteudo">
+        <div class="cabecalho-pagina">
+          <div>
+            <h1>Cadastros</h1>
+            <p>Gerencie usuários, clientes e as listas de tipos de problema e serviço.</p>
+          </div>
+          <div class="acoes-topo">
+            <button type="button" id="botao-tema" class="alternador-tema" aria-pressed="false">
+              <svg id="icone-tema" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"></svg>
+              <span id="texto-tema">Modo escuro</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="abas-cadastros" class="abas">
+          <button type="button" class="aba-botao" data-aba="usuarios" id="aba-botao-usuarios">Usuários</button>
+          <button type="button" class="aba-botao" data-aba="clientes">Clientes</button>
+          <button type="button" class="aba-botao" data-aba="tipos-problema">Tipos de problema</button>
+          <button type="button" class="aba-botao" data-aba="tipos-servico">Tipos de serviço</button>
+          <button type="button" class="aba-botao" data-aba="todos">Todos</button>
+        </div>
+
+        <!-- ------------------------------ Usuários ------------------------------ -->
+        <div id="aba-usuarios" class="aba-painel">
+          <div class="cartao">
+            <div class="cabecalho-pagina" style="margin-bottom: 12px;">
+              <h2>Usuários</h2>
+              <div class="acoes-topo">
+                <button type="button" id="botao-novo-usuario" class="botao botao-primario">+ Novo usuário</button>
+              </div>
+            </div>
+            <div class="subabas" id="subabas-usuarios">
+              <button type="button" class="subaba-botao" data-perfil="tecnico">Técnicos</button>
+              <button type="button" class="subaba-botao" data-perfil="suporte">Suporte</button>
+              <button type="button" class="subaba-botao" data-perfil="admin">Admin</button>
+            </div>
+            <div id="lista-usuarios"><div class="carregando-pagina"><span class="spinner" aria-hidden="true"></span><span>Carregando usuários...</span></div></div>
+          </div>
+        </div>
+
+        <!-- ------------------------------ Clientes ------------------------------ -->
+        <div id="aba-clientes" class="aba-painel">
+          <div class="cartao">
+            <div class="cabecalho-pagina" style="margin-bottom: 12px;">
+              <h2>Clientes</h2>
+              <div class="acoes-topo">
+                <button type="button" id="botao-novo-cliente" class="botao botao-primario">+ Novo cliente</button>
+              </div>
+            </div>
+            <div class="barra-filtros">
+              <input type="search" id="filtro-busca-clientes" placeholder="Buscar por nome ou CPF...">
+            </div>
+            <div id="lista-clientes"><div class="carregando-pagina"><span class="spinner" aria-hidden="true"></span><span>Carregando clientes...</span></div></div>
+          </div>
+        </div>
+
+        <!-- --------------------------- Tipos de problema -------------------------- -->
+        <div id="aba-tipos-problema" class="aba-painel">
+          <div class="cartao">
+            <div class="cabecalho-pagina" style="margin-bottom: 12px;">
+              <h2>Tipos de problema</h2>
+              <div class="acoes-topo">
+                <button type="button" id="botao-novo-tipos-problema" class="botao botao-primario">+ Novo tipo de problema</button>
+              </div>
+            </div>
+            <div id="lista-tipos-problema"><div class="carregando-pagina"><span class="spinner" aria-hidden="true"></span><span>Carregando...</span></div></div>
+          </div>
+        </div>
+
+        <!-- ---------------------------- Tipos de serviço --------------------------- -->
+        <div id="aba-tipos-servico" class="aba-painel">
+          <div class="cartao">
+            <div class="cabecalho-pagina" style="margin-bottom: 12px;">
+              <h2>Tipos de serviço</h2>
+              <div class="acoes-topo">
+                <button type="button" id="botao-novo-tipos-servico" class="botao botao-primario">+ Novo tipo de serviço</button>
+              </div>
+            </div>
+            <div id="lista-tipos-servico"><div class="carregando-pagina"><span class="spinner" aria-hidden="true"></span><span>Carregando...</span></div></div>
+          </div>
+        </div>
+
+        <!-- -------------------------------- Todos --------------------------------- -->
+        <div id="aba-todos" class="aba-painel">
+          <div class="secao-resumo cartao" id="resumo-usuarios-secao">
+            <div class="secao-resumo-cabecalho">
+              <h2>Usuários</h2>
+              <button type="button" class="botao botao-secundario botao-pequeno" data-ir-para="usuarios">Gerenciar</button>
+            </div>
+            <hr class="divisor">
+            <div class="subabas" id="subabas-resumo-usuarios">
+              <button type="button" class="subaba-botao" data-perfil="tecnico">Técnicos</button>
+              <button type="button" class="subaba-botao" data-perfil="suporte">Suporte</button>
+              <button type="button" class="subaba-botao" data-perfil="admin">Admin</button>
+            </div>
+            <div id="resumo-usuarios"></div>
+          </div>
+          <div class="secao-resumo cartao">
+            <div class="secao-resumo-cabecalho">
+              <h2>Clientes</h2>
+              <button type="button" class="botao botao-secundario botao-pequeno" data-ir-para="clientes">Gerenciar</button>
+            </div>
+            <hr class="divisor">
+            <div id="resumo-clientes"></div>
+          </div>
+          <div class="secao-resumo cartao">
+            <div class="secao-resumo-cabecalho">
+              <h2>Tipos de problema</h2>
+              <button type="button" class="botao botao-secundario botao-pequeno" data-ir-para="tipos-problema">Gerenciar</button>
+            </div>
+            <hr class="divisor">
+            <div id="resumo-tipos-problema"></div>
+          </div>
+          <div class="secao-resumo cartao">
+            <div class="secao-resumo-cabecalho">
+              <h2>Tipos de serviço</h2>
+              <button type="button" class="botao botao-secundario botao-pequeno" data-ir-para="tipos-servico">Gerenciar</button>
+            </div>
+            <hr class="divisor">
+            <div id="resumo-tipos-servico"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/usuarios.js"></script>
+  <script src="js/cadastros.js"></script>
+  <script>
+    let usuarioLogado = null;
+
+    function rotuloPerfilTexto(perfil) {
+      return { admin: 'Administrador', suporte: 'Suporte', tecnico: 'Técnico' }[perfil] || perfil;
+    }
+
+    const ROTULO_PERFIL_PLURAL = { admin: 'administradores', suporte: 'usuários de suporte', tecnico: 'técnicos' };
+
+    /**
+     * Liga um grupo de botões [data-perfil] (sub-abas Técnicos/Suporte/Admin):
+     * ao clicar, marca o botão ativo e chama aoSelecionar(perfil). Usado tanto
+     * no painel de edição de Usuários quanto no resumo da aba "Todos".
+     */
+    function configurarSubabasPerfil(container, aoSelecionar, padrao = 'tecnico') {
+      const botoes = Array.from(container.querySelectorAll('[data-perfil]'));
+      function selecionar(perfil) {
+        botoes.forEach(b => b.classList.toggle('subaba-botao-ativa', b.dataset.perfil === perfil));
+        aoSelecionar(perfil);
+      }
+      botoes.forEach(b => b.addEventListener('click', () => selecionar(b.dataset.perfil)));
+      selecionar(padrao);
+      return { selecionar };
+    }
+
+    // ==========================================================================
+    // Usuários (somente Administrador) — dividido em sub-abas por perfil
+    // ==========================================================================
+
+    let usuariosCache = [];
+    let perfilAtivoPainel = 'tecnico';
+    let perfilAtivoResumo = 'tecnico';
+
+    async function carregarUsuarios() {
+      const container = document.getElementById('lista-usuarios');
+      container.innerHTML = '<div class="carregando-pagina"><span class="spinner" aria-hidden="true"></span><span>Carregando usuários...</span></div>';
+      try {
+        usuariosCache = await listarUsuarios();
+        renderizarUsuariosPainel();
+        renderizarUsuariosResumo();
+      } catch (erro) {
+        mostrarErro(traduzirErro(erro));
+        renderizarVazio(container, 'Não foi possível carregar os usuários.');
+      }
+    }
+
+    function renderizarUsuariosPainel() {
+      const lista = usuariosCache.filter(u => u.perfil === perfilAtivoPainel);
+      renderizarListaUsuarios(document.getElementById('lista-usuarios'), lista, { somenteLeitura: false, perfil: perfilAtivoPainel });
+    }
+
+    function renderizarUsuariosResumo() {
+      const lista = usuariosCache.filter(u => u.perfil === perfilAtivoResumo);
+      renderizarListaUsuarios(document.getElementById('resumo-usuarios'), lista, { somenteLeitura: true, perfil: perfilAtivoResumo });
+    }
+
+    function renderizarListaUsuarios(container, usuarios, { somenteLeitura, perfil }) {
+      if (usuarios.length === 0) {
+        renderizarVazio(container, `Nenhum(a) ${ROTULO_PERFIL_PLURAL[perfil] || 'usuário'} cadastrado(a) ainda.`);
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="tabela-wrap">
+        <table class="tabela">
+          <thead>
+            <tr>
+              <th>Nome</th><th>Login</th><th>Perfil</th><th>Telefone</th><th>Status</th>${somenteLeitura ? '' : '<th></th>'}
+            </tr>
+          </thead>
+          <tbody>
+            ${usuarios.map(u => `
+              <tr data-id="${u.id}">
+                <td>${escaparHtml(u.nome)}</td>
+                <td>${escaparHtml(u.email)}</td>
+                <td><span class="badge badge-perfil-${escaparHtml(u.perfil)}">${escaparHtml(rotuloPerfilTexto(u.perfil))}</span></td>
+                <td>${escaparHtml(u.telefone || '—')}</td>
+                <td>
+                  ${u.ativo ? '<span class="badge badge-status-resolvido">Ativo</span>' : '<span class="badge badge-status-fechado">Inativo</span>'}
+                  ${u.precisa_trocar_senha ? '<span class="badge badge-status-aguardando_peca" style="margin-left:4px;">Aguardando 1º acesso</span>' : ''}
+                </td>
+                ${somenteLeitura ? '' : `
+                <td>
+                  <div class="acoes-topo">
+                    <button type="button" class="botao botao-secundario botao-pequeno" data-acao="editar">Editar</button>
+                    <button type="button" class="botao botao-secundario botao-pequeno" data-acao="resetar-senha" ${u.id === usuarioLogado.id ? 'disabled title="Use a tela de troca de senha para a sua própria conta"' : ''}>Resetar senha</button>
+                    ${u.ativo
+                      ? `<button type="button" class="botao botao-perigo botao-pequeno" data-acao="desativar" ${u.id === usuarioLogado.id ? 'disabled title="Você não pode desativar sua própria conta"' : ''}>Desativar</button>`
+                      : `<button type="button" class="botao botao-secundario botao-pequeno" data-acao="reativar">Reativar</button>`}
+                    <button type="button" class="botao botao-perigo botao-pequeno" data-acao="excluir" ${u.id === usuarioLogado.id ? 'disabled title="Você não pode excluir sua própria conta"' : ''}>Excluir</button>
+                  </div>
+                </td>`}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        </div>`;
+
+      if (somenteLeitura) return;
+
+      container.querySelectorAll('tr[data-id]').forEach(linha => {
+        const id = linha.dataset.id;
+        const usuario = usuarios.find(u => u.id === id);
+
+        linha.querySelector('[data-acao="editar"]').addEventListener('click', () => abrirModalUsuario(usuario));
+
+        const botaoResetarSenha = linha.querySelector('[data-acao="resetar-senha"]');
+        if (botaoResetarSenha) {
+          botaoResetarSenha.addEventListener('click', async () => {
+            const ok = await confirmarAcao(
+              `Resetar a senha de "${usuario.nome}" para a senha padrão (123456)? O usuário será obrigado a trocá-la no próximo acesso.`,
+              'Resetar senha'
+            );
+            if (!ok) return;
+            try {
+              await resetarSenhaUsuario(id);
+              mostrarSucesso(`Senha de "${usuario.nome}" resetada para 123456.`);
+              carregarUsuarios();
+            } catch (erro) {
+              mostrarErro(traduzirErro(erro));
+            }
+          });
+        }
+
+        const botaoDesativar = linha.querySelector('[data-acao="desativar"]');
+        if (botaoDesativar) {
+          botaoDesativar.addEventListener('click', async () => {
+            const ok = await confirmarAcao(`Desativar o acesso de "${usuario.nome}" ao sistema?`, 'Desativar');
+            if (!ok) return;
+            try {
+              await desativarUsuario(id);
+              mostrarSucesso('Usuário desativado.');
+              carregarUsuarios();
+            } catch (erro) {
+              mostrarErro(traduzirErro(erro));
+            }
+          });
+        }
+
+        const botaoReativar = linha.querySelector('[data-acao="reativar"]');
+        if (botaoReativar) {
+          botaoReativar.addEventListener('click', async () => {
+            const ok = await confirmarAcao(`Reativar o acesso de "${usuario.nome}" ao sistema?`, 'Reativar');
+            if (!ok) return;
+            try {
+              await reativarUsuario(id);
+              mostrarSucesso('Usuário reativado.');
+              carregarUsuarios();
+            } catch (erro) {
+              mostrarErro(traduzirErro(erro));
+            }
+          });
+        }
+
+        const botaoExcluir = linha.querySelector('[data-acao="excluir"]');
+        if (botaoExcluir) {
+          botaoExcluir.addEventListener('click', async () => {
+            const ok = await confirmarAcao(
+              `Excluir definitivamente "${usuario.nome}" (${usuario.email})? Essa ação não pode ser desfeita.`,
+              'Excluir'
+            );
+            if (!ok) return;
+            try {
+              await excluirUsuario(id);
+              mostrarSucesso('Usuário excluído.');
+              carregarUsuarios();
+            } catch (erro) {
+              mostrarErro(traduzirErro(erro));
+            }
+          });
+        }
+      });
+    }
+
+    function abrirModalUsuario(usuario) {
+      const ehEdicao = !!usuario;
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+        <div class="modal-caixa" role="dialog" aria-modal="true" style="max-width: 440px;">
+          <h2>${ehEdicao ? 'Editar usuário' : 'Novo usuário'}</h2>
+          <hr class="divisor">
+          <div id="modal-erro" class="form-erro" role="alert"></div>
+          <form id="form-usuario">
+            ${ehEdicao ? `
+              <div class="campo">
+                <label for="campo-nome">Nome completo *</label>
+                <input type="text" id="campo-nome" required value="${escaparHtml(usuario.nome)}">
+              </div>
+              <div class="campo">
+                <label for="campo-login">Login</label>
+                <input type="text" id="campo-login" disabled value="${escaparHtml(usuario.email)}">
+                <div class="campo-ajuda">O login não pode ser alterado por aqui.</div>
+              </div>
+            ` : `
+              <div class="linha-campos">
+                <div class="campo">
+                  <label for="campo-nome-novo">Nome *</label>
+                  <input type="text" id="campo-nome-novo" required>
+                </div>
+                <div class="campo">
+                  <label for="campo-sobrenome">Sobrenome *</label>
+                  <input type="text" id="campo-sobrenome" required>
+                </div>
+              </div>
+              <div class="campo">
+                <div class="campo-ajuda">
+                  Login gerado automaticamente: <strong id="preview-login">—</strong><br>
+                  Senha padrão: <strong>123456</strong> (o usuário será obrigado a trocá-la no primeiro acesso).
+                </div>
+              </div>
+            `}
+            <div class="campo">
+              <label for="campo-perfil">Perfil *</label>
+              <select id="campo-perfil" required>
+                <option value="suporte">Suporte</option>
+                <option value="tecnico">Técnico</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="campo-telefone">Telefone</label>
+              <input type="tel" id="campo-telefone" value="${ehEdicao ? escaparHtml(usuario.telefone || '') : ''}">
+            </div>
+            <div class="modal-acoes">
+              <button type="button" class="botao botao-secundario" data-acao="cancelar">Cancelar</button>
+              <button type="submit" id="botao-salvar-usuario" class="botao botao-primario">${ehEdicao ? 'Salvar alterações' : 'Criar usuário'}</button>
+            </div>
+          </form>
+        </div>`;
+      document.body.appendChild(overlay);
+
+      if (ehEdicao) {
+        document.getElementById('campo-perfil').value = usuario.perfil;
+      } else {
+        const campoNome = document.getElementById('campo-nome-novo');
+        const campoSobrenome = document.getElementById('campo-sobrenome');
+        const previewLogin = document.getElementById('preview-login');
+        const atualizarPreview = () => {
+          const base = `${normalizarParaLogin(campoNome.value)}.${normalizarParaLogin(campoSobrenome.value)}`;
+          previewLogin.textContent = base === '.' ? '—' : `${base}@${DOMINIO_LOGIN_GERADO}`;
+        };
+        campoNome.addEventListener('input', atualizarPreview);
+        campoSobrenome.addEventListener('input', atualizarPreview);
+      }
+
+      overlay.querySelector('[data-acao="cancelar"]').addEventListener('click', () => overlay.remove());
+      overlay.addEventListener('click', (ev) => { if (ev.target === overlay) overlay.remove(); });
+
+      const modalErro = document.getElementById('modal-erro');
+
+      document.getElementById('form-usuario').addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        modalErro.classList.remove('visivel');
+
+        if (ehEdicao) {
+          const nome = document.getElementById('campo-nome').value.trim();
+          const ok = await confirmarAcao(`Salvar as alterações do usuário "${nome}"?`, 'Salvar');
+          if (!ok) return;
+
+          const botao = document.getElementById('botao-salvar-usuario');
+          definirCarregando(botao, true, 'Salvando...');
+          try {
+            await atualizarUsuario(usuario.id, {
+              nome,
+              perfil: document.getElementById('campo-perfil').value,
+              telefone: document.getElementById('campo-telefone').value.trim() || null
+            });
+            mostrarSucesso('Usuário atualizado.');
+            overlay.remove();
+            carregarUsuarios();
+          } catch (erro) {
+            modalErro.textContent = traduzirErro(erro);
+            modalErro.classList.add('visivel');
+            definirCarregando(botao, false);
+          }
+        } else {
+          const nome = document.getElementById('campo-nome-novo').value.trim();
+          const sobrenome = document.getElementById('campo-sobrenome').value.trim();
+          if (!nome || !sobrenome) {
+            modalErro.textContent = 'Preencha nome e sobrenome.';
+            modalErro.classList.add('visivel');
+            return;
+          }
+
+          const ok = await confirmarAcao(`Criar o usuário "${nome} ${sobrenome}"?`, 'Criar');
+          if (!ok) return;
+
+          const botao = document.getElementById('botao-salvar-usuario');
+          definirCarregando(botao, true, 'Salvando...');
+          try {
+            const resultado = await criarUsuario({
+              nome,
+              sobrenome,
+              perfil: document.getElementById('campo-perfil').value,
+              telefone: document.getElementById('campo-telefone').value.trim()
+            });
+            exibirCredenciaisCriadas(overlay, resultado);
+            carregarUsuarios();
+          } catch (erro) {
+            modalErro.textContent = traduzirErro(erro);
+            modalErro.classList.add('visivel');
+            definirCarregando(botao, false);
+          }
+        }
+      });
+    }
+
+    function exibirCredenciaisCriadas(overlay, { login, senha }) {
+      const caixa = overlay.querySelector('.modal-caixa');
+      caixa.innerHTML = `
+        <h2>Usuário criado com sucesso</h2>
+        <hr class="divisor">
+        <p>Repasse estas credenciais ao usuário. Ele será obrigado a trocar a senha no primeiro acesso.</p>
+        <div class="cartao" style="margin-top: 12px; background: var(--cor-fundo);">
+          <p><strong>Login:</strong> ${escaparHtml(login)}</p>
+          <p style="margin-top: 6px;"><strong>Senha padrão:</strong> ${escaparHtml(senha)}</p>
+        </div>
+        <div class="modal-acoes">
+          <button type="button" class="botao botao-primario" data-acao="concluir">Concluir</button>
+        </div>`;
+      caixa.querySelector('[data-acao="concluir"]').addEventListener('click', () => overlay.remove());
+    }
+
+    // ==========================================================================
+    // Clientes (Administrador e Suporte)
+    // ==========================================================================
+
+    let temporizadorBuscaClientes = null;
+
+    async function carregarClientes() {
+      const container = document.getElementById('lista-clientes');
+      container.innerHTML = '<div class="carregando-pagina"><span class="spinner" aria-hidden="true"></span><span>Carregando clientes...</span></div>';
+      try {
+        const busca = document.getElementById('filtro-busca-clientes').value;
+        const clientes = await listarClientes(busca);
+        renderizarListaClientes(container, clientes, { somenteLeitura: false });
+        if (!busca) {
+          renderizarListaClientes(document.getElementById('resumo-clientes'), clientes.slice(0, 8), { somenteLeitura: true });
+        }
+      } catch (erro) {
+        mostrarErro(traduzirErro(erro));
+        renderizarVazio(container, 'Não foi possível carregar os clientes.');
+      }
+    }
+
+    function renderizarListaClientes(container, clientes, { somenteLeitura }) {
+      if (clientes.length === 0) {
+        renderizarVazio(container, 'Nenhum cliente cadastrado ainda.');
+        return;
+      }
+
+      const podeGerenciar = !somenteLeitura && ['admin', 'suporte'].includes(usuarioLogado.perfil);
+
+      container.innerHTML = `
+        <div class="tabela-wrap">
+        <table class="tabela">
+          <thead>
+            <tr>
+              <th>Nome</th><th>CPF</th><th>Bairro/Local</th><th>Plano</th><th>Status</th>${podeGerenciar ? '<th></th>' : ''}
+            </tr>
+          </thead>
+          <tbody>
+            ${clientes.map(c => `
+              <tr data-id="${c.id}">
+                <td>${escaparHtml(c.nome)}</td>
+                <td>${escaparHtml(formatarCpf(c.cpf))}</td>
+                <td>${escaparHtml(c.bairro || '—')}</td>
+                <td>${escaparHtml(c.plano || '—')}</td>
+                <td>${c.ativo ? '<span class="badge badge-status-resolvido">Ativo</span>' : '<span class="badge badge-status-fechado">Inativo</span>'}</td>
+                ${podeGerenciar ? `
+                <td>
+                  <div class="acoes-topo">
+                    <button type="button" class="botao botao-secundario botao-pequeno" data-acao="editar">Editar</button>
+                    ${c.ativo
+                      ? `<button type="button" class="botao botao-secundario botao-pequeno" data-acao="desativar">Desativar</button>`
+                      : `<button type="button" class="botao botao-secundario botao-pequeno" data-acao="reativar">Reativar</button>`}
+                    ${usuarioLogado.perfil === 'admin' ? '<button type="button" class="botao botao-perigo botao-pequeno" data-acao="excluir">Excluir</button>' : ''}
+                  </div>
+                </td>` : ''}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        </div>`;
+
+      if (!podeGerenciar) return;
+
+      container.querySelectorAll('tr[data-id]').forEach(linha => {
+        const id = linha.dataset.id;
+        const cliente = clientes.find(c => String(c.id) === id);
+
+        linha.querySelector('[data-acao="editar"]').addEventListener('click', () => abrirModalCliente(cliente));
+
+        const botaoDesativar = linha.querySelector('[data-acao="desativar"]');
+        if (botaoDesativar) {
+          botaoDesativar.addEventListener('click', async () => {
+            const ok = await confirmarAcao(`Desativar o cliente "${cliente.nome}"?`, 'Desativar');
+            if (!ok) return;
+            try {
+              await definirAtivoCliente(id, false);
+              mostrarSucesso('Cliente desativado.');
+              carregarClientes();
+            } catch (erro) {
+              mostrarErro(traduzirErro(erro));
+            }
+          });
+        }
+
+        const botaoReativar = linha.querySelector('[data-acao="reativar"]');
+        if (botaoReativar) {
+          botaoReativar.addEventListener('click', async () => {
+            const ok = await confirmarAcao(`Reativar o cliente "${cliente.nome}"?`, 'Reativar');
+            if (!ok) return;
+            try {
+              await definirAtivoCliente(id, true);
+              mostrarSucesso('Cliente reativado.');
+              carregarClientes();
+            } catch (erro) {
+              mostrarErro(traduzirErro(erro));
+            }
+          });
+        }
+
+        const botaoExcluir = linha.querySelector('[data-acao="excluir"]');
+        if (botaoExcluir) {
+          botaoExcluir.addEventListener('click', async () => {
+            const ok = await confirmarAcao(`Excluir definitivamente o cliente "${cliente.nome}"? Essa ação não pode ser desfeita.`, 'Excluir');
+            if (!ok) return;
+            try {
+              await excluirCliente(id);
+              mostrarSucesso('Cliente excluído.');
+              carregarClientes();
+            } catch (erro) {
+              mostrarErro(traduzirErro(erro));
+            }
+          });
+        }
+      });
+    }
+
+    function abrirModalCliente(cliente) {
+      const ehEdicao = !!cliente;
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+        <div class="modal-caixa" role="dialog" aria-modal="true" style="max-width: 440px;">
+          <h2>${ehEdicao ? 'Editar cliente' : 'Novo cliente'}</h2>
+          <hr class="divisor">
+          <div id="modal-erro" class="form-erro" role="alert"></div>
+          <form id="form-cliente">
+            <div class="campo">
+              <label for="campo-nome-cliente">Nome *</label>
+              <input type="text" id="campo-nome-cliente" required maxlength="120" value="${ehEdicao ? escaparHtml(cliente.nome) : ''}">
+            </div>
+            <div class="campo">
+              <label for="campo-cpf-cliente">CPF *</label>
+              <input type="text" id="campo-cpf-cliente" required inputmode="numeric" maxlength="14" placeholder="000.000.000-00" value="${ehEdicao ? escaparHtml(formatarCpf(cliente.cpf)) : ''}">
+            </div>
+            <div class="linha-campos">
+              <div class="campo">
+                <label for="campo-bairro-cliente">Bairro/Local</label>
+                <input type="text" id="campo-bairro-cliente" maxlength="120" value="${ehEdicao ? escaparHtml(cliente.bairro || '') : ''}">
+              </div>
+              <div class="campo">
+                <label for="campo-plano-cliente">Plano</label>
+                <input type="text" id="campo-plano-cliente" maxlength="120" value="${ehEdicao ? escaparHtml(cliente.plano || '') : ''}">
+              </div>
+            </div>
+            <div class="modal-acoes">
+              <button type="button" class="botao botao-secundario" data-acao="cancelar">Cancelar</button>
+              <button type="submit" id="botao-salvar-cliente" class="botao botao-primario">${ehEdicao ? 'Salvar alterações' : 'Criar cliente'}</button>
+            </div>
+          </form>
+        </div>`;
+      document.body.appendChild(overlay);
+
+      const campoCpf = document.getElementById('campo-cpf-cliente');
+      campoCpf.addEventListener('input', () => {
+        campoCpf.value = formatarCpf(apenasDigitos(campoCpf.value).slice(0, 11));
+      });
+
+      overlay.querySelector('[data-acao="cancelar"]').addEventListener('click', () => overlay.remove());
+      overlay.addEventListener('click', (ev) => { if (ev.target === overlay) overlay.remove(); });
+
+      const modalErro = document.getElementById('modal-erro');
+
+      document.getElementById('form-cliente').addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        modalErro.classList.remove('visivel');
+
+        const dados = {
+          nome: document.getElementById('campo-nome-cliente').value.trim(),
+          cpf: apenasDigitos(campoCpf.value),
+          bairro: document.getElementById('campo-bairro-cliente').value.trim(),
+          plano: document.getElementById('campo-plano-cliente').value.trim()
+        };
+
+        if (dados.cpf.length !== 11) {
+          modalErro.textContent = 'Digite os 11 números do CPF.';
+          modalErro.classList.add('visivel');
+          return;
+        }
+
+        const ok = await confirmarAcao(
+          ehEdicao ? `Salvar as alterações do cliente "${dados.nome}"?` : `Criar o cliente "${dados.nome}"?`,
+          ehEdicao ? 'Salvar' : 'Criar'
+        );
+        if (!ok) return;
+
+        const botao = document.getElementById('botao-salvar-cliente');
+        definirCarregando(botao, true, 'Salvando...');
+        try {
+          if (ehEdicao) {
+            await atualizarCliente(cliente.id, dados);
+            mostrarSucesso('Cliente atualizado.');
+          } else {
+            await criarCliente(dados);
+            mostrarSucesso('Cliente criado.');
+          }
+          overlay.remove();
+          carregarClientes();
+        } catch (erro) {
+          modalErro.textContent = traduzirErro(erro);
+          modalErro.classList.add('visivel');
+          definirCarregando(botao, false);
+        }
+      });
+    }
+
+    // ==========================================================================
+    // Tipos de problema / Tipos de serviço (somente Administrador gerencia)
+    // ==========================================================================
+
+    const CONFIG_TIPOS = {
+      'tipos-problema': { tabela: 'tipos_problema', rotulo: 'tipo de problema', rotuloPlural: 'tipos de problema' },
+      'tipos-servico': { tabela: 'tipos_servico', rotulo: 'tipo de serviço', rotuloPlural: 'tipos de serviço' }
+    };
+
+    async function carregarTipos(chave) {
+      const { tabela } = CONFIG_TIPOS[chave];
+      const container = document.getElementById(`lista-${chave}`);
+      container.innerHTML = '<div class="carregando-pagina"><span class="spinner" aria-hidden="true"></span><span>Carregando...</span></div>';
+      try {
+        const tipos = await listarTipos(tabela);
+        renderizarListaTipos(container, tipos, chave, { somenteLeitura: false });
+        renderizarListaTipos(document.getElementById(`resumo-${chave}`), tipos, chave, { somenteLeitura: true });
+      } catch (erro) {
+        mostrarErro(traduzirErro(erro));
+        renderizarVazio(container, 'Não foi possível carregar a lista.');
+      }
+    }
+
+    function renderizarListaTipos(container, tipos, chave, { somenteLeitura }) {
+      if (tipos.length === 0) {
+        renderizarVazio(container, `Nenhum ${CONFIG_TIPOS[chave].rotulo} cadastrado ainda.`);
+        return;
+      }
+
+      const podeGerenciar = !somenteLeitura && usuarioLogado.perfil === 'admin';
+
+      container.innerHTML = `
+        <div class="tabela-wrap">
+        <table class="tabela">
+          <thead><tr><th>Nome</th><th>Status</th>${podeGerenciar ? '<th></th>' : ''}</tr></thead>
+          <tbody>
+            ${tipos.map(t => `
+              <tr data-id="${t.id}">
+                <td>${escaparHtml(t.nome)}</td>
+                <td>${t.ativo ? '<span class="badge badge-status-resolvido">Ativo</span>' : '<span class="badge badge-status-fechado">Inativo</span>'}</td>
+                ${podeGerenciar ? `
+                <td>
+                  <div class="acoes-topo">
+                    <button type="button" class="botao botao-secundario botao-pequeno" data-acao="editar">Editar</button>
+                    ${t.ativo
+                      ? `<button type="button" class="botao botao-secundario botao-pequeno" data-acao="desativar">Desativar</button>`
+                      : `<button type="button" class="botao botao-secundario botao-pequeno" data-acao="reativar">Reativar</button>`}
+                    <button type="button" class="botao botao-perigo botao-pequeno" data-acao="excluir">Excluir</button>
+                  </div>
+                </td>` : ''}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        </div>`;
+
+      if (!podeGerenciar) return;
+
+      const { tabela, rotulo } = CONFIG_TIPOS[chave];
+
+      container.querySelectorAll('tr[data-id]').forEach(linha => {
+        const id = linha.dataset.id;
+        const tipo = tipos.find(t => String(t.id) === id);
+
+        linha.querySelector('[data-acao="editar"]').addEventListener('click', () => abrirModalTipo(chave, tipo));
+
+        const botaoDesativar = linha.querySelector('[data-acao="desativar"]');
+        if (botaoDesativar) {
+          botaoDesativar.addEventListener('click', async () => {
+            const ok = await confirmarAcao(`Desativar o ${rotulo} "${tipo.nome}"?`, 'Desativar');
+            if (!ok) return;
+            try {
+              await definirAtivoTipo(tabela, id, false);
+              mostrarSucesso(`${rotulo[0].toUpperCase()}${rotulo.slice(1)} desativado.`);
+              carregarTipos(chave);
+            } catch (erro) {
+              mostrarErro(traduzirErro(erro));
+            }
+          });
+        }
+
+        const botaoReativar = linha.querySelector('[data-acao="reativar"]');
+        if (botaoReativar) {
+          botaoReativar.addEventListener('click', async () => {
+            const ok = await confirmarAcao(`Reativar o ${rotulo} "${tipo.nome}"?`, 'Reativar');
+            if (!ok) return;
+            try {
+              await definirAtivoTipo(tabela, id, true);
+              mostrarSucesso(`${rotulo[0].toUpperCase()}${rotulo.slice(1)} reativado.`);
+              carregarTipos(chave);
+            } catch (erro) {
+              mostrarErro(traduzirErro(erro));
+            }
+          });
+        }
+
+        const botaoExcluir = linha.querySelector('[data-acao="excluir"]');
+        if (botaoExcluir) {
+          botaoExcluir.addEventListener('click', async () => {
+            const ok = await confirmarAcao(`Excluir definitivamente o ${rotulo} "${tipo.nome}"? Essa ação não pode ser desfeita.`, 'Excluir');
+            if (!ok) return;
+            try {
+              await excluirTipo(tabela, id);
+              mostrarSucesso(`${rotulo[0].toUpperCase()}${rotulo.slice(1)} excluído.`);
+              carregarTipos(chave);
+            } catch (erro) {
+              mostrarErro(traduzirErro(erro));
+            }
+          });
+        }
+      });
+    }
+
+    function abrirModalTipo(chave, tipo) {
+      const { tabela, rotulo } = CONFIG_TIPOS[chave];
+      const ehEdicao = !!tipo;
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+        <div class="modal-caixa" role="dialog" aria-modal="true" style="max-width: 400px;">
+          <h2>${ehEdicao ? `Editar ${rotulo}` : `Novo ${rotulo}`}</h2>
+          <hr class="divisor">
+          <div id="modal-erro" class="form-erro" role="alert"></div>
+          <form id="form-tipo">
+            <div class="campo">
+              <label for="campo-nome-tipo">Nome *</label>
+              <input type="text" id="campo-nome-tipo" required maxlength="120" value="${ehEdicao ? escaparHtml(tipo.nome) : ''}">
+            </div>
+            <div class="modal-acoes">
+              <button type="button" class="botao botao-secundario" data-acao="cancelar">Cancelar</button>
+              <button type="submit" id="botao-salvar-tipo" class="botao botao-primario">${ehEdicao ? 'Salvar alterações' : 'Criar'}</button>
+            </div>
+          </form>
+        </div>`;
+      document.body.appendChild(overlay);
+
+      overlay.querySelector('[data-acao="cancelar"]').addEventListener('click', () => overlay.remove());
+      overlay.addEventListener('click', (ev) => { if (ev.target === overlay) overlay.remove(); });
+
+      const modalErro = document.getElementById('modal-erro');
+
+      document.getElementById('form-tipo').addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        modalErro.classList.remove('visivel');
+        const nome = document.getElementById('campo-nome-tipo').value.trim();
+
+        const ok = await confirmarAcao(
+          ehEdicao ? `Salvar as alterações do ${rotulo} "${nome}"?` : `Criar o ${rotulo} "${nome}"?`,
+          ehEdicao ? 'Salvar' : 'Criar'
+        );
+        if (!ok) return;
+
+        const botao = document.getElementById('botao-salvar-tipo');
+        definirCarregando(botao, true, 'Salvando...');
+        try {
+          if (ehEdicao) {
+            await atualizarTipo(tabela, tipo.id, nome);
+            mostrarSucesso(`${rotulo[0].toUpperCase()}${rotulo.slice(1)} atualizado.`);
+          } else {
+            await criarTipo(tabela, nome);
+            mostrarSucesso(`${rotulo[0].toUpperCase()}${rotulo.slice(1)} criado.`);
+          }
+          overlay.remove();
+          carregarTipos(chave);
+        } catch (erro) {
+          modalErro.textContent = traduzirErro(erro);
+          modalErro.classList.add('visivel');
+          definirCarregando(botao, false);
+        }
+      });
+    }
+
+    // ==========================================================================
+    // Inicialização / abas
+    // ==========================================================================
+
+    (async () => {
+      const usuario = await exigirAutenticacao(['admin', 'suporte']);
+      if (!usuario) return;
+      usuarioLogado = usuario;
+      renderizarSidebar(usuario, 'cadastros');
+
+      const containerAbas = document.getElementById('abas-cadastros');
+
+      configurarSubabasPerfil(document.getElementById('subabas-usuarios'), (perfil) => {
+        perfilAtivoPainel = perfil;
+        renderizarUsuariosPainel();
+      });
+
+      if (usuario.perfil !== 'admin') {
+        document.getElementById('aba-botao-usuarios').remove();
+        document.getElementById('resumo-usuarios-secao').remove();
+      } else {
+        configurarSubabasPerfil(document.getElementById('subabas-resumo-usuarios'), (perfil) => {
+          perfilAtivoResumo = perfil;
+          renderizarUsuariosResumo();
+        });
+      }
+
+      const { ativar } = inicializarAbas(containerAbas, {
+        onAtivar: (id) => {
+          if (id === 'usuarios') carregarUsuarios();
+          else if (id === 'clientes') carregarClientes();
+          else if (id === 'tipos-problema') carregarTipos('tipos-problema');
+          else if (id === 'tipos-servico') carregarTipos('tipos-servico');
+          else if (id === 'todos') {
+            if (usuario.perfil === 'admin') carregarUsuarios();
+            carregarClientes();
+            carregarTipos('tipos-problema');
+            carregarTipos('tipos-servico');
+          }
+        }
+      });
+
+      document.querySelectorAll('[data-ir-para]').forEach(botao => {
+        botao.addEventListener('click', () => ativar(botao.dataset.irPara));
+      });
+
+      const abaInicial = new URLSearchParams(window.location.search).get('aba');
+      const abasValidas = ['usuarios', 'clientes', 'tipos-problema', 'tipos-servico', 'todos'];
+      const alvo = (abaInicial && abasValidas.includes(abaInicial) && (abaInicial !== 'usuarios' || usuario.perfil === 'admin'))
+        ? abaInicial
+        : (usuario.perfil === 'admin' ? 'usuarios' : 'clientes');
+      ativar(alvo);
+    })();
+
+    document.getElementById('botao-novo-usuario').addEventListener('click', () => abrirModalUsuario(null));
+    document.getElementById('botao-novo-cliente').addEventListener('click', () => abrirModalCliente(null));
+    document.getElementById('botao-novo-tipos-problema').addEventListener('click', () => abrirModalTipo('tipos-problema', null));
+    document.getElementById('botao-novo-tipos-servico').addEventListener('click', () => abrirModalTipo('tipos-servico', null));
+
+    document.getElementById('filtro-busca-clientes').addEventListener('input', () => {
+      clearTimeout(temporizadorBuscaClientes);
+      temporizadorBuscaClientes = setTimeout(carregarClientes, 350);
+    });
+
+    // ==========================================================================
+    // Modo claro / escuro
+    // ==========================================================================
+
+    const ICONE_TEMA_CLARO = '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>';
+    const ICONE_TEMA_ESCURO = '<path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>';
+
+    function aplicarTema(tema) {
+      document.documentElement.dataset.theme = tema;
+      document.getElementById('icone-tema').innerHTML = tema === 'dark' ? ICONE_TEMA_CLARO : ICONE_TEMA_ESCURO;
+      document.getElementById('texto-tema').textContent = tema === 'dark' ? 'Modo claro' : 'Modo escuro';
+      document.getElementById('botao-tema').setAttribute('aria-pressed', String(tema === 'dark'));
+    }
+
+    (() => {
+      let temaSalvo = 'light';
+      try { temaSalvo = localStorage.getItem('tema') || 'light'; } catch (e) { /* localStorage indisponível */ }
+      aplicarTema(temaSalvo);
+    })();
+
+    document.getElementById('botao-tema').addEventListener('click', () => {
+      const novoTema = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      aplicarTema(novoTema);
+      try { localStorage.setItem('tema', novoTema); } catch (e) { /* localStorage indisponível */ }
+    });
+  </script>
+</body>
+</html>

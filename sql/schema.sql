@@ -445,6 +445,134 @@ $$;
 
 grant execute on function public.atribuir_tecnico(bigint, uuid) to authenticated;
 
+-- ----------------------------------------------------------------------------
+-- 7. TABELAS DE CADASTRO — clientes, tipos de problema e tipos de serviço
+-- ----------------------------------------------------------------------------
+
+create table if not exists public.clientes (
+  id            bigint generated always as identity primary key,
+  nome          text not null,
+  cpf           text not null unique check (cpf ~ '^[0-9]{11}$'),
+  bairro        text,
+  plano         text,
+  ativo         boolean not null default true,
+  criado_em     timestamptz not null default now(),
+  atualizado_em timestamptz not null default now()
+);
+
+comment on table public.clientes is 'Clientes atendidos pelo suporte técnico.';
+comment on column public.clientes.cpf is 'Somente dígitos (11 caracteres), sem formatação.';
+
+create table if not exists public.tipos_problema (
+  id        bigint generated always as identity primary key,
+  nome      text not null unique,
+  ativo     boolean not null default true,
+  criado_em timestamptz not null default now()
+);
+
+comment on table public.tipos_problema is 'Lista de referência dos tipos de problema relatados pelos clientes.';
+
+create table if not exists public.tipos_servico (
+  id        bigint generated always as identity primary key,
+  nome      text not null unique,
+  ativo     boolean not null default true,
+  criado_em timestamptz not null default now()
+);
+
+comment on table public.tipos_servico is 'Lista de referência dos tipos de serviço prestados.';
+
+create index if not exists idx_clientes_nome on public.clientes (nome);
+create index if not exists idx_clientes_cpf on public.clientes (cpf);
+
+-- Mantém atualizado_em sempre em dia a cada UPDATE em clientes.
+create or replace function public.clientes_set_atualizado_em()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.atualizado_em = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_clientes_set_atualizado_em on public.clientes;
+create trigger trg_clientes_set_atualizado_em
+  before update on public.clientes
+  for each row execute function public.clientes_set_atualizado_em();
+
+-- RLS — clientes: leitura para qualquer usuário ativo; escrita para
+-- administrador e suporte; exclusão restrita ao administrador.
+alter table public.clientes enable row level security;
+
+drop policy if exists clientes_select on public.clientes;
+create policy clientes_select on public.clientes
+  for select
+  using (public.usuario_ativo());
+
+drop policy if exists clientes_insert on public.clientes;
+create policy clientes_insert on public.clientes
+  for insert
+  with check (public.usuario_perfil() in ('admin', 'suporte'));
+
+drop policy if exists clientes_update on public.clientes;
+create policy clientes_update on public.clientes
+  for update
+  using (public.usuario_perfil() in ('admin', 'suporte'))
+  with check (public.usuario_perfil() in ('admin', 'suporte'));
+
+drop policy if exists clientes_delete on public.clientes;
+create policy clientes_delete on public.clientes
+  for delete
+  using (public.usuario_perfil() = 'admin');
+
+-- RLS — tipos_problema e tipos_servico: leitura para qualquer usuário ativo;
+-- escrita e exclusão restritas ao administrador (listas de configuração).
+alter table public.tipos_problema enable row level security;
+
+drop policy if exists tipos_problema_select on public.tipos_problema;
+create policy tipos_problema_select on public.tipos_problema
+  for select
+  using (public.usuario_ativo());
+
+drop policy if exists tipos_problema_insert on public.tipos_problema;
+create policy tipos_problema_insert on public.tipos_problema
+  for insert
+  with check (public.usuario_perfil() = 'admin');
+
+drop policy if exists tipos_problema_update on public.tipos_problema;
+create policy tipos_problema_update on public.tipos_problema
+  for update
+  using (public.usuario_perfil() = 'admin')
+  with check (public.usuario_perfil() = 'admin');
+
+drop policy if exists tipos_problema_delete on public.tipos_problema;
+create policy tipos_problema_delete on public.tipos_problema
+  for delete
+  using (public.usuario_perfil() = 'admin');
+
+alter table public.tipos_servico enable row level security;
+
+drop policy if exists tipos_servico_select on public.tipos_servico;
+create policy tipos_servico_select on public.tipos_servico
+  for select
+  using (public.usuario_ativo());
+
+drop policy if exists tipos_servico_insert on public.tipos_servico;
+create policy tipos_servico_insert on public.tipos_servico
+  for insert
+  with check (public.usuario_perfil() = 'admin');
+
+drop policy if exists tipos_servico_update on public.tipos_servico;
+create policy tipos_servico_update on public.tipos_servico
+  for update
+  using (public.usuario_perfil() = 'admin')
+  with check (public.usuario_perfil() = 'admin');
+
+drop policy if exists tipos_servico_delete on public.tipos_servico;
+create policy tipos_servico_delete on public.tipos_servico
+  for delete
+  using (public.usuario_perfil() = 'admin');
+
 -- ============================================================================
 -- BOOTSTRAP DO PRIMEIRO ADMIN
 -- ============================================================================

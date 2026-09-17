@@ -144,6 +144,7 @@ function renderizarTabelaChamados(container, chamados, opcoes = {}) {
   `).join('');
 
   container.innerHTML = `
+    <div class="tabela-wrap">
     <table class="tabela">
       <thead>
         <tr>
@@ -157,7 +158,8 @@ function renderizarTabelaChamados(container, chamados, opcoes = {}) {
         </tr>
       </thead>
       <tbody>${linhas}</tbody>
-    </table>`;
+    </table>
+    </div>`;
 
   container.querySelectorAll('.linha-chamado').forEach(linha => {
     const irParaDetalhe = () => { window.location.href = `chamado.html?id=${linha.dataset.id}`; };

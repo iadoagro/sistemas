@@ -10,9 +10,17 @@
 <link rel="stylesheet" href="css/estilo.css">
 </head>
 <body class="pagina">
-  <header id="navbar" class="navbar"></header>
+  <div class="layout-app">
+    <aside id="sidebar" class="sidebar"></aside>
+    <div class="area-principal">
+      <header class="topbar-mobile">
+        <button type="button" id="botao-menu-mobile" class="topbar-menu-botao" aria-label="Abrir menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+        <span class="topbar-marca">Sistema</span>
+      </header>
 
-  <main class="conteudo">
+      <main class="conteudo">
     <div class="cabecalho-pagina">
       <div>
         <h1>Abrir novo chamado</h1>
@@ -70,7 +78,10 @@
         <button type="submit" id="botao-abrir" class="botao botao-primario botao-bloco">Abrir chamado</button>
       </form>
     </div>
-  </main>
+      </main>
+    </div>
+  </div>
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="js/config.js"></script>
@@ -124,6 +135,9 @@
         exibirErroFormulario('Preencha os campos obrigatórios (título, cliente e descrição).');
         return;
       }
+
+      const ok = await confirmarAcao(`Abrir o chamado "${payload.titulo}" para o cliente "${payload.clienteNome}"?`, 'Abrir chamado');
+      if (!ok) return;
 
       const botao = document.getElementById('botao-abrir');
       definirCarregando(botao, true, 'Abrindo...');

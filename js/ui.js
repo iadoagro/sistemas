@@ -83,6 +83,21 @@ function traduzirErro(erro) {
   if (msg.includes('violates foreign key constraint') && msg.includes('chamados')) {
     return 'Não é possível excluir este usuário porque ele está vinculado a chamados existentes (como técnico ou como quem abriu o chamado). Use "Desativar" em vez de excluir.';
   }
+  if (msg.includes('clientes_cpf_key') || (msg.includes('duplicate key') && msg.includes('clientes') && msg.includes('cpf'))) {
+    return 'Já existe um cliente cadastrado com este CPF.';
+  }
+  if (msg.includes('clientes_cpf_check')) {
+    return 'CPF inválido. Digite os 11 números do CPF.';
+  }
+  if (msg.includes('tipos_problema_nome_key')) {
+    return 'Já existe um tipo de problema com este nome.';
+  }
+  if (msg.includes('tipos_servico_nome_key')) {
+    return 'Já existe um tipo de serviço com este nome.';
+  }
+  if (msg.includes('duplicate key') && msg.includes('usuarios_email_key')) {
+    return 'Já existe um usuário com este login.';
+  }
   if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
     return 'Não foi possível conectar ao servidor. Verifique sua internet e tente novamente.';
   }
@@ -144,9 +159,21 @@ function confirmarAcao(mensagem, tituloBotao = 'Confirmar') {
   });
 }
 
-/** Renderiza a barra de navegação de acordo com o perfil do usuário logado. */
+const ICONES_SIDEBAR = {
+  dashboard: '<path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>',
+  chamados: '<path d="M9 13h6m-6 4h6M9 9h1M5 21h14a2 2 0 002-2V7.414a2 2 0 00-.586-1.414l-3.414-3.414A2 2 0 0015.586 2H5a2 2 0 00-2 2v15a2 2 0 002 2z"/>',
+  'abrir-chamado': '<path d="M12 5v14m-7-7h14"/>',
+  'painel-tecnico': '<path d="M9 13h6m-6 4h6M9 9h1M5 21h14a2 2 0 002-2V7.414a2 2 0 00-.586-1.414l-3.414-3.414A2 2 0 0015.586 2H5a2 2 0 00-2 2v15a2 2 0 002 2z"/>',
+  cadastros: '<path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>'
+};
+
+/** Renderiza o menu lateral de acordo com o perfil do usuário logado. */
 function renderizarNavbar(usuario, paginaAtiva) {
-  const destino = document.getElementById('navbar');
+  return renderizarSidebar(usuario, paginaAtiva);
+}
+
+function renderizarSidebar(usuario, paginaAtiva) {
+  const destino = document.getElementById('sidebar');
   if (!destino || !usuario) return;
 
   const links = [];
@@ -154,37 +181,38 @@ function renderizarNavbar(usuario, paginaAtiva) {
     links.push({ href: 'dashboard.html', rotulo: 'Dashboard', id: 'dashboard' });
     links.push({ href: 'chamados.html', rotulo: 'Chamados', id: 'chamados' });
     links.push({ href: 'abrir-chamado.html', rotulo: 'Abrir chamado', id: 'abrir-chamado' });
-    links.push({ href: 'usuarios.html', rotulo: 'Usuários', id: 'usuarios' });
+    links.push({ href: 'cadastros.html', rotulo: 'Cadastros', id: 'cadastros' });
   } else if (usuario.perfil === 'suporte') {
     links.push({ href: 'chamados.html', rotulo: 'Chamados', id: 'chamados' });
     links.push({ href: 'abrir-chamado.html', rotulo: 'Abrir chamado', id: 'abrir-chamado' });
+    links.push({ href: 'cadastros.html', rotulo: 'Cadastros', id: 'cadastros' });
   } else if (usuario.perfil === 'tecnico') {
     links.push({ href: 'painel-tecnico.html', rotulo: 'Meus chamados', id: 'painel-tecnico' });
   }
 
   const linksHtml = links.map(l => `
-    <a href="${l.href}" class="navbar-link ${l.id === paginaAtiva ? 'navbar-link-ativo' : ''}">${escaparHtml(l.rotulo)}</a>
+    <a href="${l.href}" class="sidebar-link ${l.id === paginaAtiva ? 'sidebar-link-ativo' : ''}">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${ICONES_SIDEBAR[l.id] || ''}</svg>
+      ${escaparHtml(l.rotulo)}
+    </a>
   `).join('');
 
   destino.innerHTML = `
-    <div class="navbar-conteudo">
-      <div class="navbar-marca">
-        <span class="navbar-logo" aria-hidden="true">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/>
-          </svg>
-        </span>
-        Sistema
-      </div>
-      <nav class="navbar-links">${linksHtml}</nav>
-      <div class="navbar-usuario">
-        <span class="navbar-usuario-nome">${escaparHtml(usuario.nome)}</span>
+    <div class="sidebar-marca">
+      <span class="sidebar-logo" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/>
+        </svg>
+      </span>
+      Sistema
+    </div>
+    <nav class="sidebar-links">${linksHtml}</nav>
+    <div class="sidebar-rodape">
+      <div class="sidebar-usuario">
+        <span class="sidebar-usuario-nome">${escaparHtml(usuario.nome)}</span>
         <span class="badge badge-perfil-${escaparHtml(usuario.perfil)}">${escaparHtml(rotuloPerfil(usuario.perfil))}</span>
-        <button type="button" id="botao-sair" class="botao botao-secundario botao-pequeno">Sair</button>
       </div>
-      <button type="button" id="botao-menu-mobile" class="navbar-menu-mobile" aria-label="Abrir menu">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-      </button>
+      <button type="button" id="botao-sair" class="botao botao-secundario botao-pequeno botao-bloco">Sair</button>
     </div>`;
 
   document.getElementById('botao-sair').addEventListener('click', async () => {
@@ -192,12 +220,43 @@ function renderizarNavbar(usuario, paginaAtiva) {
     if (ok) fazerLogout();
   });
 
+  const overlay = document.getElementById('sidebar-overlay');
   const botaoMenu = document.getElementById('botao-menu-mobile');
-  botaoMenu.addEventListener('click', () => {
-    destino.classList.toggle('navbar-aberta');
-  });
+  const fecharMenu = () => document.body.classList.remove('sidebar-aberta');
+  if (botaoMenu) {
+    botaoMenu.addEventListener('click', () => document.body.classList.toggle('sidebar-aberta'));
+  }
+  if (overlay) {
+    overlay.addEventListener('click', fecharMenu);
+  }
+  destino.querySelectorAll('.sidebar-link').forEach(link => link.addEventListener('click', fecharMenu));
 }
 
 function rotuloPerfil(perfil) {
   return { admin: 'Administrador', suporte: 'Suporte', tecnico: 'Técnico' }[perfil] || perfil;
+}
+
+/**
+ * Liga o comportamento de um grupo de abas: botões com [data-aba] alternam
+ * a visibilidade dos painéis com o id correspondente, e disparam
+ * onAtivar(id) na primeira vez que cada aba é aberta (para lazy-load).
+ */
+function inicializarAbas(containerBotoes, { onAtivar } = {}) {
+  const jaAtivadas = new Set();
+  const botoes = Array.from(containerBotoes.querySelectorAll('[data-aba]'));
+
+  function ativar(id) {
+    botoes.forEach(b => b.classList.toggle('aba-botao-ativa', b.dataset.aba === id));
+    document.querySelectorAll('.aba-painel').forEach(p => {
+      p.classList.toggle('aba-painel-ativo', p.id === `aba-${id}`);
+    });
+    if (!jaAtivadas.has(id)) {
+      jaAtivadas.add(id);
+      if (onAtivar) onAtivar(id);
+    }
+  }
+
+  botoes.forEach(b => b.addEventListener('click', () => ativar(b.dataset.aba)));
+
+  return { ativar };
 }

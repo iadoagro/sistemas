@@ -10,13 +10,24 @@
 <link rel="stylesheet" href="css/estilo.css">
 </head>
 <body class="pagina">
-  <header id="navbar" class="navbar"></header>
+  <div class="layout-app">
+    <aside id="sidebar" class="sidebar"></aside>
+    <div class="area-principal">
+      <header class="topbar-mobile">
+        <button type="button" id="botao-menu-mobile" class="topbar-menu-botao" aria-label="Abrir menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+        <span class="topbar-marca">Sistema</span>
+      </header>
 
-  <main class="conteudo">
+      <main class="conteudo">
     <div id="conteudo-pagina">
       <div class="carregando-pagina"><span class="spinner" aria-hidden="true"></span><span>Carregando chamado...</span></div>
     </div>
-  </main>
+      </main>
+    </div>
+  </div>
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="js/config.js"></script>
@@ -149,6 +160,9 @@
         document.getElementById('form-atribuir').addEventListener('submit', async (ev) => {
           ev.preventDefault();
           if (!selectTecnico.value) { mostrarErro('Selecione um técnico.'); return; }
+          const nomeTecnico = selectTecnico.options[selectTecnico.selectedIndex].textContent;
+          const ok = await confirmarAcao(`Atribuir o chamado #${chamado.id} ao técnico "${nomeTecnico}"?`, 'Atribuir');
+          if (!ok) return;
           const botao = document.getElementById('botao-atribuir');
           definirCarregando(botao, true, 'Atribuindo...');
           try {
@@ -169,6 +183,9 @@
 
         document.getElementById('form-status').addEventListener('submit', async (ev) => {
           ev.preventDefault();
+          const rotuloNovoStatus = selectStatus.options[selectStatus.selectedIndex].textContent;
+          const ok = await confirmarAcao(`Atualizar o status do chamado #${chamado.id} para "${rotuloNovoStatus}"?`, 'Atualizar');
+          if (!ok) return;
           const botao = document.getElementById('botao-status');
           definirCarregando(botao, true, 'Atualizando...');
           try {
@@ -186,6 +203,8 @@
           const campo = document.getElementById('texto-comentario');
           const texto = campo.value.trim();
           if (!texto) { mostrarErro('Escreva um comentário antes de enviar.'); return; }
+          const ok = await confirmarAcao('Adicionar este comentário ao chamado?', 'Adicionar');
+          if (!ok) return;
           const botao = document.getElementById('botao-comentario');
           definirCarregando(botao, true, 'Enviando...');
           try {

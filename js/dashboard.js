@@ -139,6 +139,7 @@ function renderizarCargaTecnicos(container, porTecnico) {
     return;
   }
   container.innerHTML = `
+    <div class="tabela-wrap">
     <table class="tabela">
       <thead><tr><th>Técnico</th><th>Chamados em aberto</th><th>Total de chamados</th></tr></thead>
       <tbody>
@@ -150,5 +151,6 @@ function renderizarCargaTecnicos(container, porTecnico) {
           </tr>
         `).join('')}
       </tbody>
-    </table>`;
+    </table>
+    </div>`;
 }
