@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chamados — Sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body class="pagina">
+  <header id="navbar" class="navbar"></header>
+
+  <main class="conteudo">
+    <div class="cabecalho-pagina">
+      <div>
+        <h1>Chamados</h1>
+        <p>Acompanhe e gerencie todos os chamados do sistema.</p>
+      </div>
+      <div class="acoes-topo">
+        <a href="abrir-chamado.html" class="botao botao-primario">+ Abrir chamado</a>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div class="barra-filtros">
+        <input type="search" id="filtro-busca" placeholder="Buscar por título, cliente ou descrição...">
+        <select id="filtro-status">
+          <option value="">Todos os status</option>
+        </select>
+        <select id="filtro-prioridade">
+          <option value="">Todas as prioridades</option>
+        </select>
+        <select id="filtro-tecnico">
+          <option value="">Todos os técnicos</option>
+        </select>
+      </div>
+
+      <div id="lista-chamados">
+        <div class="carregando-pagina"><span class="spinner" aria-hidden="true"></span><span>Carregando chamados...</span></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/chamados.js"></script>
+  <script>
+    const containerLista = document.getElementById('lista-chamados');
+    const filtroBusca = document.getElementById('filtro-busca');
+    const filtroStatus = document.getElementById('filtro-status');
+    const filtroPrioridade = document.getElementById('filtro-prioridade');
+    const filtroTecnico = document.getElementById('filtro-tecnico');
+
+    let temporizadorBusca = null;
+
+    async function carregarLista() {
+      containerLista.innerHTML = '<div class="carregando-pagina"><span class="spinner" aria-hidden="true"></span><span>Carregando chamados...</span></div>';
+      try {
+        const chamados = await listarChamados({
+          busca: filtroBusca.value,
+          status: filtroStatus.value,
+          prioridade: filtroPrioridade.value,
+          tecnicoId: filtroTecnico.value
+        });
+        renderizarTabelaChamados(containerLista, chamados, { mensagemVazia: 'Nenhum chamado encontrado com os filtros atuais.' });
+      } catch (erro) {
+        mostrarErro(traduzirErro(erro));
+        renderizarVazio(containerLista, 'Não foi possível carregar os chamados.');
+      }
+    }
+
+    (async () => {
+      const usuario = await exigirAutenticacao(['admin', 'suporte']);
+      if (!usuario) return;
+      renderizarNavbar(usuario, 'chamados');
+
+      STATUS_CHAMADO.forEach(s => filtroStatus.add(new Option(s.rotulo, s.valor)));
+      PRIORIDADES_CHAMADO.forEach(p => filtroPrioridade.add(new Option(p.rotulo, p.valor)));
+
+      try {
+        const tecnicos = await listarTecnicosAtivos();
+        tecnicos.forEach(t => filtroTecnico.add(new Option(t.nome, t.id)));
+      } catch (erro) {
+        mostrarErro(traduzirErro(erro));
+      }
+
+      await carregarLista();
+    })();
+
+    filtroStatus.addEventListener('change', carregarLista);
+    filtroPrioridade.addEventListener('change', carregarLista);
+    filtroTecnico.addEventListener('change', carregarLista);
+    filtroBusca.addEventListener('input', () => {
+      clearTimeout(temporizadorBusca);
+      temporizadorBusca = setTimeout(carregarLista, 350);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chamado — Sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body class="pagina">
+  <header id="navbar" class="navbar"></header>
+
+  <main class="conteudo">
+    <div id="conteudo-pagina">
+      <div class="carregando-pagina"><span class="spinner" aria-hidden="true"></span><span>Carregando chamado...</span></div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/chamados.js"></script>
+  <script>
+    const conteudoPagina = document.getElementById('conteudo-pagina');
+    const idChamado = new URLSearchParams(window.location.search).get('id');
+    let usuarioAtual = null;
+
+    function podeGerenciar(usuario, chamado) {
+      if (usuario.perfil === 'admin' || usuario.perfil === 'suporte') return true;
+      return usuario.perfil === 'tecnico' && chamado.tecnico_id === usuario.id;
+    }
+
+    async function carregarPagina() {
+      if (!idChamado) {
+        conteudoPagina.innerHTML = '';
+        renderizarVazio(conteudoPagina, 'Chamado não especificado.');
+        return;
+      }
+
+      let chamado, historico;
+      try {
+        [chamado, historico] = await Promise.all([buscarChamado(idChamado), listarHistorico(idChamado)]);
+      } catch (erro) {
+        mostrarErro(traduzirErro(erro));
+        conteudoPagina.innerHTML = '';
+        renderizarVazio(conteudoPagina, 'Não foi possível carregar este chamado.');
+        return;
+      }
+
+      if (!chamado) {
+        conteudoPagina.innerHTML = '';
+        renderizarVazio(conteudoPagina, 'Chamado não encontrado, ou você não tem acesso a ele.');
+        return;
+      }
+
+      const gerenciavel = podeGerenciar(usuarioAtual, chamado);
+      const podeAtribuir = usuarioAtual.perfil === 'admin' || usuarioAtual.perfil === 'suporte';
+
+      conteudoPagina.innerHTML = `
+        <div class="cabecalho-pagina">
+          <div>
+            <a href="javascript:history.back()" class="botao-texto">&larr; Voltar</a>
+            <h1>#${chamado.id} — ${escaparHtml(chamado.titulo)}</h1>
+            <p>Aberto por ${escaparHtml(chamado.aberto_por_usuario?.nome || '—')} em ${formatarData(chamado.criado_em)}</p>
+          </div>
+          <div class="acoes-topo">
+            ${badgePrioridade(chamado.prioridade)}
+            ${badgeStatus(chamado.status)}
+          </div>
+        </div>
+
+        <div class="grade-2">
+          <div class="cartao">
+            <h2>Detalhes do chamado</h2>
+            <hr class="divisor">
+            <p><strong>Cliente:</strong> ${escaparHtml(chamado.cliente_nome)}</p>
+            <p><strong>Contato:</strong> ${escaparHtml(chamado.cliente_contato || '—')}</p>
+            <p><strong>Endereço:</strong> ${escaparHtml(chamado.endereco || '—')}</p>
+            <p><strong>Categoria:</strong> ${escaparHtml(ROTULOS_CATEGORIA[chamado.categoria] || chamado.categoria)}</p>
+            <p><strong>Técnico responsável:</strong> ${chamado.tecnico ? escaparHtml(chamado.tecnico.nome) : 'Não atribuído'}</p>
+            <p style="margin-top: 12px;"><strong>Descrição:</strong></p>
+            <p>${escaparHtml(chamado.descricao)}</p>
+
+            ${podeAtribuir ? `
+              <hr class="divisor">
+              <h3>Atribuir técnico</h3>
+              <form id="form-atribuir">
+                <div class="linha-campos" style="align-items: end;">
+                  <div class="campo" style="margin-bottom:0;">
+                    <label for="select-tecnico" class="visually-hidden">Técnico</label>
+                    <select id="select-tecnico"></select>
+                  </div>
+                  <button type="submit" id="botao-atribuir" class="botao botao-secundario">Atribuir</button>
+                </div>
+              </form>
+            ` : ''}
+
+            ${gerenciavel ? `
+              <hr class="divisor">
+              <h3>Atualizar status</h3>
+              <form id="form-status">
+                <div class="campo">
+                  <label for="select-status" class="visually-hidden">Novo status</label>
+                  <select id="select-status"></select>
+                </div>
+                <div class="campo">
+                  <label for="obs-status" class="visually-hidden">Observação (opcional)</label>
+                  <textarea id="obs-status" placeholder="Observação sobre a mudança de status (opcional)"></textarea>
+                </div>
+                <button type="submit" id="botao-status" class="botao botao-primario">Atualizar status</button>
+              </form>
+
+              <hr class="divisor">
+              <h3>Adicionar comentário / observação técnica</h3>
+              <form id="form-comentario">
+                <div class="campo">
+                  <label for="texto-comentario" class="visually-hidden">Comentário</label>
+                  <textarea id="texto-comentario" placeholder="Descreva o atendimento realizado..." required></textarea>
+                </div>
+                <button type="submit" id="botao-comentario" class="botao botao-secundario">Adicionar comentário</button>
+              </form>
+            ` : ''}
+          </div>
+
+          <div class="cartao">
+            <h2>Histórico</h2>
+            <hr class="divisor">
+            <div id="lista-historico"></div>
+          </div>
+        </div>
+      `;
+
+      renderizarHistorico(historico);
+
+      if (podeAtribuir) {
+        const selectTecnico = document.getElementById('select-tecnico');
+        try {
+          const tecnicos = await listarTecnicosAtivos();
+          preencherSelectTecnicos(selectTecnico, tecnicos, { comOpcaoVazia: true });
+          if (chamado.tecnico_id) selectTecnico.value = chamado.tecnico_id;
+        } catch (erro) {
+          mostrarErro(traduzirErro(erro));
+        }
+
+        document.getElementById('form-atribuir').addEventListener('submit', async (ev) => {
+          ev.preventDefault();
+          if (!selectTecnico.value) { mostrarErro('Selecione um técnico.'); return; }
+          const botao = document.getElementById('botao-atribuir');
+          definirCarregando(botao, true, 'Atribuindo...');
+          try {
+            await atribuirTecnico(chamado.id, selectTecnico.value);
+            mostrarSucesso('Técnico atribuído com sucesso.');
+            await carregarPagina();
+          } catch (erro) {
+            mostrarErro(traduzirErro(erro));
+            definirCarregando(botao, false);
+          }
+        });
+      }
+
+      if (gerenciavel) {
+        const selectStatus = document.getElementById('select-status');
+        STATUS_CHAMADO.forEach(s => selectStatus.add(new Option(s.rotulo, s.valor)));
+        selectStatus.value = chamado.status;
+
+        document.getElementById('form-status').addEventListener('submit', async (ev) => {
+          ev.preventDefault();
+          const botao = document.getElementById('botao-status');
+          definirCarregando(botao, true, 'Atualizando...');
+          try {
+            await atualizarStatusChamado(chamado.id, selectStatus.value, document.getElementById('obs-status').value.trim());
+            mostrarSucesso('Status atualizado com sucesso.');
+            await carregarPagina();
+          } catch (erro) {
+            mostrarErro(traduzirErro(erro));
+            definirCarregando(botao, false);
+          }
+        });
+
+        document.getElementById('form-comentario').addEventListener('submit', async (ev) => {
+          ev.preventDefault();
+          const campo = document.getElementById('texto-comentario');
+          const texto = campo.value.trim();
+          if (!texto) { mostrarErro('Escreva um comentário antes de enviar.'); return; }
+          const botao = document.getElementById('botao-comentario');
+          definirCarregando(botao, true, 'Enviando...');
+          try {
+            await adicionarComentario(chamado.id, texto);
+            mostrarSucesso('Comentário adicionado.');
+            await carregarPagina();
+          } catch (erro) {
+            mostrarErro(traduzirErro(erro));
+            definirCarregando(botao, false);
+          }
+        });
+      }
+    }
+
+    const ICONES_TIPO_HISTORICO = {
+      criacao: 'Criação',
+      status: 'Mudança de status',
+      comentario: 'Comentário',
+      atribuicao: 'Atribuição'
+    };
+
+    function renderizarHistorico(historico) {
+      const destino = document.getElementById('lista-historico');
+      if (!historico || historico.length === 0) {
+        renderizarVazio(destino, 'Nenhum evento registrado ainda.');
+        return;
+      }
+      destino.innerHTML = `
+        <ul class="linha-tempo">
+          ${historico.slice().reverse().map(h => `
+            <li class="linha-tempo-item">
+              <div class="linha-tempo-cabecalho">
+                <span class="linha-tempo-autor">${escaparHtml(h.usuario?.nome || 'Sistema')}</span>
+                <span class="chip-fechavel">${escaparHtml(ICONES_TIPO_HISTORICO[h.tipo] || h.tipo)}</span>
+                <span class="linha-tempo-data">${formatarData(h.criado_em)}</span>
+              </div>
+              <div class="linha-tempo-descricao">${escaparHtml(h.descricao)}</div>
+            </li>
+          `).join('')}
+        </ul>`;
+    }
+
+    (async () => {
+      const usuario = await exigirAutenticacao(['admin', 'suporte', 'tecnico']);
+      if (!usuario) return;
+      usuarioAtual = usuario;
+      renderizarNavbar(usuario, usuario.perfil === 'tecnico' ? 'painel-tecnico' : 'chamados');
+      await carregarPagina();
+    })();
+  </script>
+</body>
+</html>

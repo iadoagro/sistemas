@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meus chamados — Sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body class="pagina">
+  <header id="navbar" class="navbar"></header>
+
+  <main class="conteudo">
+    <div class="cabecalho-pagina">
+      <div>
+        <h1>Meus chamados</h1>
+        <p>Chamados atribuídos a você. Toque em um chamado para atualizar o status.</p>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div class="barra-filtros">
+        <select id="filtro-status">
+          <option value="">Todos os status</option>
+        </select>
+      </div>
+
+      <div id="lista-chamados">
+        <div class="carregando-pagina"><span class="spinner" aria-hidden="true"></span><span>Carregando chamados...</span></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/chamados.js"></script>
+  <script>
+    const containerLista = document.getElementById('lista-chamados');
+    const filtroStatus = document.getElementById('filtro-status');
+    let usuarioAtual = null;
+
+    async function carregarLista() {
+      containerLista.innerHTML = '<div class="carregando-pagina"><span class="spinner" aria-hidden="true"></span><span>Carregando chamados...</span></div>';
+      try {
+        const chamados = await listarChamados({
+          tecnicoId: usuarioAtual.id,
+          status: filtroStatus.value
+        });
+        renderizarTabelaChamados(containerLista, chamados, {
+          mensagemVazia: 'Nenhum chamado atribuído a você no momento.',
+          mostrarTecnico: false
+        });
+      } catch (erro) {
+        mostrarErro(traduzirErro(erro));
+        renderizarVazio(containerLista, 'Não foi possível carregar seus chamados.');
+      }
+    }
+
+    (async () => {
+      const usuario = await exigirAutenticacao(['tecnico']);
+      if (!usuario) return;
+      usuarioAtual = usuario;
+      renderizarNavbar(usuario, 'painel-tecnico');
+
+      STATUS_CHAMADO.forEach(s => filtroStatus.add(new Option(s.rotulo, s.valor)));
+
+      await carregarLista();
+    })();
+
+    filtroStatus.addEventListener('change', carregarLista);
+  </script>
+</body>
+</html>

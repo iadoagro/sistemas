@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trocar senha — Sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+  <div class="pagina-login">
+    <div class="login-caixa">
+      <div class="login-marca" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zM8 11V7a4 4 0 118 0v4"/>
+        </svg>
+      </div>
+      <h1 class="login-titulo" id="titulo-pagina">Defina uma nova senha</h1>
+      <p class="login-subtitulo" id="subtitulo-pagina">Por segurança, troque a senha padrão antes de continuar.</p>
+
+      <div id="form-erro" class="form-erro" role="alert"></div>
+
+      <form id="form-senha" novalidate>
+        <div class="campo">
+          <label for="senha-nova">Nova senha</label>
+          <input type="password" id="senha-nova" autocomplete="new-password" minlength="6" required>
+          <div class="campo-ajuda">Mínimo de 6 caracteres.</div>
+        </div>
+        <div class="campo">
+          <label for="senha-confirmar">Confirmar nova senha</label>
+          <input type="password" id="senha-confirmar" autocomplete="new-password" minlength="6" required>
+        </div>
+        <button type="submit" id="botao-trocar" class="botao botao-primario botao-bloco">Salvar nova senha</button>
+      </form>
+      <p style="text-align:center; margin-top: 14px;">
+        <button type="button" id="botao-sair-troca" class="botao-texto">Sair</button>
+      </p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    const formErro = document.getElementById('form-erro');
+    function exibirErroFormulario(mensagem) {
+      formErro.textContent = mensagem;
+      formErro.classList.add('visivel');
+    }
+
+    let usuarioAtual = null;
+
+    (async () => {
+      usuarioAtual = await exigirAutenticacao(null);
+      if (!usuarioAtual) return;
+
+      if (!usuarioAtual.precisa_trocar_senha) {
+        document.getElementById('titulo-pagina').textContent = 'Alterar senha';
+        document.getElementById('subtitulo-pagina').textContent = 'Escolha uma nova senha para sua conta.';
+      }
+    })();
+
+    document.getElementById('botao-sair-troca').addEventListener('click', async () => {
+      const ok = await confirmarAcao('Deseja sair sem trocar a senha?', 'Sair');
+      if (ok) fazerLogout();
+    });
+
+    document.getElementById('form-senha').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      formErro.classList.remove('visivel');
+
+      const novaSenha = document.getElementById('senha-nova').value;
+      const confirmacao = document.getElementById('senha-confirmar').value;
+
+      if (novaSenha.length < 6) {
+        exibirErroFormulario('A nova senha precisa ter pelo menos 6 caracteres.');
+        return;
+      }
+      if (novaSenha !== confirmacao) {
+        exibirErroFormulario('As senhas não coincidem.');
+        return;
+      }
+      if (novaSenha === '123456') {
+        exibirErroFormulario('Escolha uma senha diferente da senha padrão.');
+        return;
+      }
+
+      const botao = document.getElementById('botao-trocar');
+      definirCarregando(botao, true, 'Salvando...');
+      try {
+        const { error: erroSenha } = await supabaseClient.auth.updateUser({ password: novaSenha });
+        if (erroSenha) throw erroSenha;
+
+        const { error: erroPerfil } = await supabaseClient
+          .from('usuarios')
+          .update({ precisa_trocar_senha: false })
+          .eq('id', usuarioAtual.id);
+        if (erroPerfil) throw erroPerfil;
+
+        mostrarSucesso('Senha atualizada com sucesso.');
+        window.location.href = PAGINA_POR_PERFIL[usuarioAtual.perfil] || 'login.html';
+      } catch (erro) {
+        exibirErroFormulario(traduzirErro(erro));
+        definirCarregando(botao, false);
+      }
+    });
+  </script>
+</body>
+</html>

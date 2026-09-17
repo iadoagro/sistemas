@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Usuários — Sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body class="pagina">
+  <header id="navbar" class="navbar"></header>
+
+  <main class="conteudo">
+    <div class="cabecalho-pagina">
+      <div>
+        <h1>Usuários</h1>
+        <p>Gerencie as contas de Suporte e Técnico do sistema.</p>
+      </div>
+      <div class="acoes-topo">
+        <button type="button" id="botao-novo-usuario" class="botao botao-primario">+ Novo usuário</button>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div id="lista-usuarios">
+        <div class="carregando-pagina"><span class="spinner" aria-hidden="true"></span><span>Carregando usuários...</span></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/usuarios.js"></script>
+  <script>
+    const containerLista = document.getElementById('lista-usuarios');
+    let usuarioLogado = null;
+
+    function rotuloPerfilTexto(perfil) {
+      return { admin: 'Administrador', suporte: 'Suporte', tecnico: 'Técnico' }[perfil] || perfil;
+    }
+
+    async function carregarLista() {
+      containerLista.innerHTML = '<div class="carregando-pagina"><span class="spinner" aria-hidden="true"></span><span>Carregando usuários...</span></div>';
+      try {
+        const usuarios = await listarUsuarios();
+        renderizarLista(usuarios);
+      } catch (erro) {
+        mostrarErro(traduzirErro(erro));
+        renderizarVazio(containerLista, 'Não foi possível carregar os usuários.');
+      }
+    }
+
+    function renderizarLista(usuarios) {
+      if (usuarios.length === 0) {
+        renderizarVazio(containerLista, 'Nenhum usuário cadastrado ainda.');
+        return;
+      }
+
+      containerLista.innerHTML = `
+        <table class="tabela">
+          <thead>
+            <tr>
+              <th>Nome</th><th>Login</th><th>Perfil</th><th>Telefone</th><th>Status</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${usuarios.map(u => `
+              <tr data-id="${u.id}">
+                <td>${escaparHtml(u.nome)}</td>
+                <td>${escaparHtml(u.email)}</td>
+                <td><span class="badge badge-perfil-${escaparHtml(u.perfil)}">${escaparHtml(rotuloPerfilTexto(u.perfil))}</span></td>
+                <td>${escaparHtml(u.telefone || '—')}</td>
+                <td>
+                  ${u.ativo ? '<span class="badge badge-status-resolvido">Ativo</span>' : '<span class="badge badge-status-fechado">Inativo</span>'}
+                  ${u.precisa_trocar_senha ? '<span class="badge badge-status-aguardando_peca" style="margin-left:4px;">Aguardando 1º acesso</span>' : ''}
+                </td>
+                <td>
+                  <div class="acoes-topo">
+                    <button type="button" class="botao botao-secundario botao-pequeno" data-acao="editar">Editar</button>
+                    <button type="button" class="botao botao-secundario botao-pequeno" data-acao="resetar-senha" ${u.id === usuarioLogado.id ? 'disabled title="Use a tela de troca de senha para a sua própria conta"' : ''}>Resetar senha</button>
+                    ${u.ativo
+                      ? `<button type="button" class="botao botao-perigo botao-pequeno" data-acao="desativar" ${u.id === usuarioLogado.id ? 'disabled title="Você não pode desativar sua própria conta"' : ''}>Desativar</button>`
+                      : `<button type="button" class="botao botao-secundario botao-pequeno" data-acao="reativar">Reativar</button>`}
+                    <button type="button" class="botao botao-perigo botao-pequeno" data-acao="excluir" ${u.id === usuarioLogado.id ? 'disabled title="Você não pode excluir sua própria conta"' : ''}>Excluir</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+
+      containerLista.querySelectorAll('tr[data-id]').forEach(linha => {
+        const id = linha.dataset.id;
+        const usuario = usuarios.find(u => u.id === id);
+
+        linha.querySelector('[data-acao="editar"]').addEventListener('click', () => abrirModalUsuario(usuario));
+
+        const botaoResetarSenha = linha.querySelector('[data-acao="resetar-senha"]');
+        if (botaoResetarSenha) {
+          botaoResetarSenha.addEventListener('click', async () => {
+            const ok = await confirmarAcao(
+              `Resetar a senha de "${usuario.nome}" para a senha padrão (123456)? O usuário será obrigado a trocá-la no próximo acesso.`,
+              'Resetar senha'
+            );
+            if (!ok) return;
+            try {
+              await resetarSenhaUsuario(id);
+              mostrarSucesso(`Senha de "${usuario.nome}" resetada para 123456.`);
+              carregarLista();
+            } catch (erro) {
+              mostrarErro(traduzirErro(erro));
+            }
+          });
+        }
+
+        const botaoDesativar = linha.querySelector('[data-acao="desativar"]');
+        if (botaoDesativar) {
+          botaoDesativar.addEventListener('click', async () => {
+            const ok = await confirmarAcao(`Desativar o acesso de "${usuario.nome}" ao sistema?`, 'Desativar');
+            if (!ok) return;
+            try {
+              await desativarUsuario(id);
+              mostrarSucesso('Usuário desativado.');
+              carregarLista();
+            } catch (erro) {
+              mostrarErro(traduzirErro(erro));
+            }
+          });
+        }
+
+        const botaoReativar = linha.querySelector('[data-acao="reativar"]');
+        if (botaoReativar) {
+          botaoReativar.addEventListener('click', async () => {
+            try {
+              await reativarUsuario(id);
+              mostrarSucesso('Usuário reativado.');
+              carregarLista();
+            } catch (erro) {
+              mostrarErro(traduzirErro(erro));
+            }
+          });
+        }
+
+        const botaoExcluir = linha.querySelector('[data-acao="excluir"]');
+        if (botaoExcluir) {
+          botaoExcluir.addEventListener('click', async () => {
+            const ok = await confirmarAcao(
+              `Excluir definitivamente "${usuario.nome}" (${usuario.email})? Essa ação não pode ser desfeita.`,
+              'Excluir'
+            );
+            if (!ok) return;
+            try {
+              await excluirUsuario(id);
+              mostrarSucesso('Usuário excluído.');
+              carregarLista();
+            } catch (erro) {
+              mostrarErro(traduzirErro(erro));
+            }
+          });
+        }
+      });
+    }
+
+    /** Abre um modal de criação (usuario=null) ou edição de usuário. */
+    function abrirModalUsuario(usuario) {
+      const ehEdicao = !!usuario;
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `
+        <div class="modal-caixa" role="dialog" aria-modal="true" style="max-width: 440px;">
+          <h2>${ehEdicao ? 'Editar usuário' : 'Novo usuário'}</h2>
+          <hr class="divisor">
+          <div id="modal-erro" class="form-erro" role="alert"></div>
+          <form id="form-usuario">
+            ${ehEdicao ? `
+              <div class="campo">
+                <label for="campo-nome">Nome completo *</label>
+                <input type="text" id="campo-nome" required value="${escaparHtml(usuario.nome)}">
+              </div>
+              <div class="campo">
+                <label for="campo-login">Login</label>
+                <input type="text" id="campo-login" disabled value="${escaparHtml(usuario.email)}">
+                <div class="campo-ajuda">O login não pode ser alterado por aqui.</div>
+              </div>
+            ` : `
+              <div class="linha-campos">
+                <div class="campo">
+                  <label for="campo-nome-novo">Nome *</label>
+                  <input type="text" id="campo-nome-novo" required>
+                </div>
+                <div class="campo">
+                  <label for="campo-sobrenome">Sobrenome *</label>
+                  <input type="text" id="campo-sobrenome" required>
+                </div>
+              </div>
+              <div class="campo">
+                <div class="campo-ajuda">
+                  Login gerado automaticamente: <strong id="preview-login">—</strong><br>
+                  Senha padrão: <strong>123456</strong> (o usuário será obrigado a trocá-la no primeiro acesso).
+                </div>
+              </div>
+            `}
+            <div class="campo">
+              <label for="campo-perfil">Perfil *</label>
+              <select id="campo-perfil" required>
+                <option value="suporte">Suporte</option>
+                <option value="tecnico">Técnico</option>
+                <option value="admin">Administrador</option>
+              </select>
+            </div>
+            <div class="campo">
+              <label for="campo-telefone">Telefone</label>
+              <input type="tel" id="campo-telefone" value="${ehEdicao ? escaparHtml(usuario.telefone || '') : ''}">
+            </div>
+            <div class="modal-acoes">
+              <button type="button" class="botao botao-secundario" data-acao="cancelar">Cancelar</button>
+              <button type="submit" id="botao-salvar-usuario" class="botao botao-primario">${ehEdicao ? 'Salvar alterações' : 'Criar usuário'}</button>
+            </div>
+          </form>
+        </div>`;
+      document.body.appendChild(overlay);
+
+      if (ehEdicao) {
+        document.getElementById('campo-perfil').value = usuario.perfil;
+      } else {
+        const campoNome = document.getElementById('campo-nome-novo');
+        const campoSobrenome = document.getElementById('campo-sobrenome');
+        const previewLogin = document.getElementById('preview-login');
+        const atualizarPreview = () => {
+          const base = `${normalizarParaLogin(campoNome.value)}.${normalizarParaLogin(campoSobrenome.value)}`;
+          previewLogin.textContent = base === '.' ? '—' : `${base}@${DOMINIO_LOGIN_GERADO}`;
+        };
+        campoNome.addEventListener('input', atualizarPreview);
+        campoSobrenome.addEventListener('input', atualizarPreview);
+      }
+
+      overlay.querySelector('[data-acao="cancelar"]').addEventListener('click', () => overlay.remove());
+      overlay.addEventListener('click', (ev) => { if (ev.target === overlay) overlay.remove(); });
+
+      const modalErro = document.getElementById('modal-erro');
+
+      document.getElementById('form-usuario').addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        modalErro.classList.remove('visivel');
+
+        const botao = document.getElementById('botao-salvar-usuario');
+        definirCarregando(botao, true, 'Salvando...');
+        try {
+          if (ehEdicao) {
+            await atualizarUsuario(usuario.id, {
+              nome: document.getElementById('campo-nome').value.trim(),
+              perfil: document.getElementById('campo-perfil').value,
+              telefone: document.getElementById('campo-telefone').value.trim() || null
+            });
+            mostrarSucesso('Usuário atualizado.');
+            overlay.remove();
+            carregarLista();
+          } else {
+            const nome = document.getElementById('campo-nome-novo').value.trim();
+            const sobrenome = document.getElementById('campo-sobrenome').value.trim();
+            if (!nome || !sobrenome) {
+              throw new Error('Preencha nome e sobrenome.');
+            }
+            const resultado = await criarUsuario({
+              nome,
+              sobrenome,
+              perfil: document.getElementById('campo-perfil').value,
+              telefone: document.getElementById('campo-telefone').value.trim()
+            });
+            exibirCredenciaisCriadas(overlay, resultado);
+            carregarLista();
+          }
+        } catch (erro) {
+          modalErro.textContent = traduzirErro(erro);
+          modalErro.classList.add('visivel');
+          definirCarregando(botao, false);
+        }
+      });
+    }
+
+    /** Substitui o conteúdo do modal pela tela de confirmação com o login e a senha gerados. */
+    function exibirCredenciaisCriadas(overlay, { login, senha }) {
+      const caixa = overlay.querySelector('.modal-caixa');
+      caixa.innerHTML = `
+        <h2>Usuário criado com sucesso</h2>
+        <hr class="divisor">
+        <p>Repasse estas credenciais ao usuário. Ele será obrigado a trocar a senha no primeiro acesso.</p>
+        <div class="cartao" style="margin-top: 12px; background: var(--cor-fundo);">
+          <p><strong>Login:</strong> ${escaparHtml(login)}</p>
+          <p style="margin-top: 6px;"><strong>Senha padrão:</strong> ${escaparHtml(senha)}</p>
+        </div>
+        <div class="modal-acoes">
+          <button type="button" class="botao botao-primario" data-acao="concluir">Concluir</button>
+        </div>`;
+      caixa.querySelector('[data-acao="concluir"]').addEventListener('click', () => overlay.remove());
+    }
+
+    (async () => {
+      const usuario = await exigirAutenticacao(['admin']);
+      if (!usuario) return;
+      usuarioLogado = usuario;
+      renderizarNavbar(usuario, 'usuarios');
+      await carregarLista();
+    })();
+
+    document.getElementById('botao-novo-usuario').addEventListener('click', () => abrirModalUsuario(null));
+  </script>
+</body>
+</html>

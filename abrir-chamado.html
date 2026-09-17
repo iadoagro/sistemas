@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Abrir chamado — Sistema</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/estilo.css">
+</head>
+<body class="pagina">
+  <header id="navbar" class="navbar"></header>
+
+  <main class="conteudo">
+    <div class="cabecalho-pagina">
+      <div>
+        <h1>Abrir novo chamado</h1>
+        <p>Registre a solicitação do cliente e, se quiser, já atribua um técnico.</p>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div id="form-erro" class="form-erro" role="alert"></div>
+
+      <form id="form-chamado" novalidate>
+        <div class="campo">
+          <label for="titulo">Título do chamado *</label>
+          <input type="text" id="titulo" required maxlength="120" placeholder="Ex: Cliente sem conexão após queda de energia">
+        </div>
+
+        <div class="linha-campos">
+          <div class="campo">
+            <label for="cliente_nome">Nome do cliente *</label>
+            <input type="text" id="cliente_nome" required maxlength="120">
+          </div>
+          <div class="campo">
+            <label for="cliente_contato">Contato (telefone/e-mail)</label>
+            <input type="text" id="cliente_contato" maxlength="120">
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="endereco">Endereço / localização</label>
+          <input type="text" id="endereco" maxlength="200">
+        </div>
+
+        <div class="campo">
+          <label for="descricao">Descrição do problema *</label>
+          <textarea id="descricao" required maxlength="2000" placeholder="Descreva o problema relatado pelo cliente"></textarea>
+        </div>
+
+        <div class="linha-campos">
+          <div class="campo">
+            <label for="categoria">Categoria *</label>
+            <select id="categoria" required></select>
+          </div>
+          <div class="campo">
+            <label for="prioridade">Prioridade *</label>
+            <select id="prioridade" required></select>
+          </div>
+        </div>
+
+        <div class="campo">
+          <label for="tecnico">Atribuir técnico</label>
+          <select id="tecnico"></select>
+          <div class="campo-ajuda">Opcional — você pode atribuir depois, pela lista de chamados.</div>
+        </div>
+
+        <button type="submit" id="botao-abrir" class="botao botao-primario botao-bloco">Abrir chamado</button>
+      </form>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/supabaseClient.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/chamados.js"></script>
+  <script>
+    const formErro = document.getElementById('form-erro');
+    function exibirErroFormulario(msg) {
+      formErro.textContent = msg;
+      formErro.classList.add('visivel');
+    }
+
+    function preencherSelectSimples(select, opcoes) {
+      select.innerHTML = opcoes.map(o => `<option value="${o.valor}">${escaparHtml(o.rotulo)}</option>`).join('');
+    }
+
+    (async () => {
+      const usuario = await exigirAutenticacao(['admin', 'suporte']);
+      if (!usuario) return;
+      renderizarNavbar(usuario, 'abrir-chamado');
+
+      preencherSelectSimples(document.getElementById('categoria'), CATEGORIAS_CHAMADO);
+      preencherSelectSimples(document.getElementById('prioridade'), PRIORIDADES_CHAMADO);
+
+      try {
+        const tecnicos = await listarTecnicosAtivos();
+        preencherSelectTecnicos(document.getElementById('tecnico'), tecnicos);
+      } catch (erro) {
+        mostrarErro(traduzirErro(erro));
+      }
+    })();
+
+    document.getElementById('form-chamado').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      formErro.classList.remove('visivel');
+
+      const payload = {
+        titulo: document.getElementById('titulo').value.trim(),
+        clienteNome: document.getElementById('cliente_nome').value.trim(),
+        clienteContato: document.getElementById('cliente_contato').value.trim(),
+        endereco: document.getElementById('endereco').value.trim(),
+        descricao: document.getElementById('descricao').value.trim(),
+        categoria: document.getElementById('categoria').value,
+        prioridade: document.getElementById('prioridade').value,
+        tecnicoId: document.getElementById('tecnico').value || null
+      };
+
+      if (!payload.titulo || !payload.clienteNome || !payload.descricao) {
+        exibirErroFormulario('Preencha os campos obrigatórios (título, cliente e descrição).');
+        return;
+      }
+
+      const botao = document.getElementById('botao-abrir');
+      definirCarregando(botao, true, 'Abrindo...');
+      try {
+        const id = await criarChamado(payload);
+        mostrarSucesso(`Chamado #${id} aberto com sucesso.`);
+        window.location.href = `chamado.html?id=${id}`;
+      } catch (erro) {
+        exibirErroFormulario(traduzirErro(erro));
+      } finally {
+        definirCarregando(botao, false);
+      }
+    });
+  </script>
+</body>
+</html>
